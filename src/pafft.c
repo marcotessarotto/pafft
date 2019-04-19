@@ -41,7 +41,11 @@
  */
 
 
-#define BUFSIZE (1024*4)
+
+
+#define AUDIO_BUF_SIZE 1024
+
+#define BUFSIZE (AUDIO_BUF_SIZE*4)
 
 #define DEBUG 0
 
@@ -70,7 +74,9 @@ static float find_max(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 
 	}
 
-	printf("%5d#  MAX_FREQ=%5d  VALUE=%.0f\n", counter++, max_freq, max);
+	// ANSI/VT100 Terminal Control Escape Sequences
+	// http://www.termsys.demon.co.uk/vtansi.htm
+	printf("%5d#  \033[32m  MAX_FREQ=%5d \033[30m  VALUE=%.0f\r", counter++, max_freq, max);
 
 	return max_freq;
 }
@@ -128,8 +134,8 @@ int main(int argc, char*argv[]) {
     /* init fft data structure */
 	cfg = kiss_fft_alloc( BUFSIZE ,/*is_inverse_fft*/ 0 ,0,0 );
 
-	cx_in = malloc(sizeof(kiss_fft_cpx) * BUFSIZE);
-	cx_out = malloc(sizeof(kiss_fft_cpx) * BUFSIZE);
+	cx_in = calloc(BUFSIZE, sizeof(kiss_fft_cpx));
+	cx_out = calloc(BUFSIZE, sizeof(kiss_fft_cpx));
 
 	if (DEBUG) {
 
@@ -141,14 +147,14 @@ int main(int argc, char*argv[]) {
 		}
 	}
 
-    uint16_t buf[BUFSIZE];
+    uint16_t buf[AUDIO_BUF_SIZE];
 
     printf("buf size: %ld bytes\n",sizeof(buf));
 
     for (;;) {
 
     	if (DEBUG) {
-    		populate_audio_buf(buf, BUFSIZE, 440, SAMPLING_FREQ);
+    		populate_audio_buf(buf, sizeof(buf) / sizeof(uint16_t), 440, SAMPLING_FREQ);
     	}
     	else {
 			/* Record some data ... */
@@ -158,9 +164,11 @@ int main(int argc, char*argv[]) {
 			}
     	}
 
-    	for (int i = 0; i < BUFSIZE; i++) {
-    		cx_in[i].r = buf[i];
-    		cx_in[i].i = 0.f;
+    	memcpy(cx_in, &cx_in[AUDIO_BUF_SIZE], (BUFSIZE - AUDIO_BUF_SIZE) * sizeof(kiss_fft_cpx));
+
+    	for (int i = 0; i < AUDIO_BUF_SIZE; i++) {
+    		cx_in[i + BUFSIZE - AUDIO_BUF_SIZE].r = buf[i];
+    		//cx_in[i].i = 0.f;
     	}
 
     	/* calculate fft */
