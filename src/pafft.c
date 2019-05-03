@@ -115,7 +115,7 @@ int main(int argc, char*argv[]) {
 
     /* The sample type to use */
     static const pa_sample_spec ss = {
-        .format = PA_SAMPLE_S16LE,
+        .format = PA_SAMPLE_S16LE, // Intel CPU architecture uses little endian memory representation
         .rate = SAMPLING_FREQ, // if SAMPLING_FREQ is 44100 Hz, then Nyquist frequency is 22050 Hz
         .channels = 1 // mono
     };
