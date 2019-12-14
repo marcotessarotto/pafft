@@ -43,15 +43,89 @@
 
 
 
-#define AUDIO_BUF_SIZE 1024
+#define AUDIO_BUF_SIZE (1024*2)
 
-#define BUFSIZE (AUDIO_BUF_SIZE*4)
+#define BUFSIZE (AUDIO_BUF_SIZE*8)
 
 #define DEBUG 0
 
 #define SAMPLING_FREQ 44100
 
+#define E2	82.41
+#define A2	110.00
+#define D3	146.83
 
+#define A3	220.00
+
+#define E4	329.63
+#define G4	392.00
+#define A4	440.00
+#define B4	493.88
+#define D5	587.33
+
+
+static float frequencies [] = {E2, A2, D3, A3, A4, -1};
+
+
+double get_freq(int freq) {
+	float * f = frequencies;
+
+	double dist;
+	if (*(f+1) != -1)
+		dist = (*(f+1) - *f) / 2 * 0.9;
+
+	while (*f != -1 && !(*f-dist <= freq && freq <= *f+dist)) {
+		f++;
+	}
+
+	return *f;
+}
+
+static void find_max_v2(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
+
+
+	float max = 0;
+	int max_freq = 0;
+
+	static int counter;
+	double freq_segment = -1;
+	double new_freq_segment = -1;
+
+	// skip frequency zero
+	for (int i = 1; i < size / 2; i++) {
+
+		int freq = sampling_freq * i / size;
+		double val = fabs(cx_out[i].r);
+
+		if (val >= max) {
+			max = val;
+			max_freq = freq;
+		}
+
+		new_freq_segment = get_freq(freq);
+
+		if (freq_segment != -1 && new_freq_segment != -1 ) {
+			max = val;
+			max_freq = freq;
+		} else if (freq_segment == -1 && new_freq_segment != -1 ) {
+			max = val;
+			max_freq = freq;
+		} else if (freq_segment != -1 && new_freq_segment == -1 ) {
+			printf("%5d#  note=%3.0f  MAX_FREQ=%5d  VALUE=%.0f\n", counter, freq_segment, max_freq, log(max));
+
+		} else {
+		}
+		freq_segment = new_freq_segment;
+
+
+	}
+
+	printf("\033[5A"); // move cursor up n lines
+
+
+	counter++;
+
+}
 
 static float find_max(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 
@@ -76,7 +150,8 @@ static float find_max(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 
 	// ANSI/VT100 Terminal Control Escape Sequences
 	// http://www.termsys.demon.co.uk/vtansi.htm
-	printf("%5d#  \033[32m  MAX_FREQ=%5d \033[30m  VALUE=%.0f\r", counter++, max_freq, max);
+	//printf("%5d#  \033[32m  MAX_FREQ=%5d \033[30m  VALUE=%.0f\r", counter++, max_freq, max);
+	printf("%5d#    MAX_FREQ=%5d VALUE=%.0f\r", counter++, max_freq, max);
 
 	return max_freq;
 }
@@ -167,14 +242,14 @@ int main(int argc, char*argv[]) {
     	memcpy(cx_in, &cx_in[AUDIO_BUF_SIZE], (BUFSIZE - AUDIO_BUF_SIZE) * sizeof(kiss_fft_cpx));
 
     	for (int i = 0; i < AUDIO_BUF_SIZE; i++) {
-    		cx_in[i + BUFSIZE - AUDIO_BUF_SIZE].r = buf[i];
+    		cx_in[i + BUFSIZE - AUDIO_BUF_SIZE].r = buf[i] ;
     		//cx_in[i].i = 0.f;
     	}
 
     	/* calculate fft */
     	kiss_fft( cfg , cx_in , cx_out );
 
-    	find_max(cx_out, BUFSIZE, SAMPLING_FREQ);
+    	find_max_v2(cx_out, BUFSIZE, SAMPLING_FREQ );
 
 
         if (DEBUG)
