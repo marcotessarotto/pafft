@@ -54,6 +54,7 @@
 #define E2	82.41
 #define A2	110.00
 #define D3	146.83
+#define E3	164.81
 
 #define A3	220.00
 
@@ -63,8 +64,7 @@
 #define B4	493.88
 #define D5	587.33
 
-
-static float frequencies [] = {E2, A2, D3, A3, A4, -1};
+static float frequencies [] = {E2, A2, D3, E3, A3, A4, -1};
 
 
 double get_freq(int freq) {
@@ -72,13 +72,23 @@ double get_freq(int freq) {
 
 	double dist;
 	if (*(f+1) != -1)
-		dist = (*(f+1) - *f) / 2 * 0.9;
+		dist = (*(f+1) - *f) / 2 * 0.8;
+	if (dist > 20)
+		dist = 20;
 
 	while (*f != -1 && !(*f-dist <= freq && freq <= *f+dist)) {
 		f++;
 	}
 
 	return *f;
+}
+
+int get_freq_len() {
+	float * f = frequencies;
+	int n = 0;
+	while (*f++ != -1)
+		n++;
+	return n;
 }
 
 static void find_max_v2(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
@@ -90,6 +100,11 @@ static void find_max_v2(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 	static int counter;
 	double freq_segment = -1;
 	double new_freq_segment = -1;
+
+	int n = get_freq_len();
+
+	printf("%u\n", n);
+
 
 	// skip frequency zero
 	for (int i = 1; i < size / 2; i++) {
@@ -120,7 +135,7 @@ static void find_max_v2(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 
 	}
 
-	printf("\033[5A"); // move cursor up n lines
+	printf("\033[%uA", get_freq_len()); // move cursor up n lines
 
 
 	counter++;
