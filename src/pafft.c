@@ -167,7 +167,9 @@ int main(int argc, char*argv[]) {
     	memcpy(cx_in, &cx_in[AUDIO_BUF_SIZE], (BUFSIZE - AUDIO_BUF_SIZE) * sizeof(kiss_fft_cpx));
 
     	for (int i = 0; i < AUDIO_BUF_SIZE; i++) {
-    		cx_in[i + BUFSIZE - AUDIO_BUF_SIZE].r = buf[i];
+    		int val = (int16_t)buf[i];
+
+    		cx_in[i + BUFSIZE - AUDIO_BUF_SIZE].r = val;
     		//cx_in[i].i = 0.f;
     	}
 
