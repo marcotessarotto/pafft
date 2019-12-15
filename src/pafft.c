@@ -103,7 +103,7 @@ static void find_max_v2(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 
 	int n = get_freq_len();
 
-	printf("%u\n", n);
+	//printf("%u\n", n);
 
 
 	// skip frequency zero
@@ -126,7 +126,7 @@ static void find_max_v2(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 			max = val;
 			max_freq = freq;
 		} else if (freq_segment != -1 && new_freq_segment == -1 ) {
-			printf("%5d#  note=%3.0f  MAX_FREQ=%5d  VALUE=%.0f\n", counter, freq_segment, max_freq, log(max));
+			//printf("%5d#  note=%3.0f  MAX_FREQ=%5d  VALUE=%.0f\n", counter, freq_segment, max_freq, log(max));
 
 		} else {
 		}
@@ -135,7 +135,7 @@ static void find_max_v2(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 
 	}
 
-	printf("\033[%uA", get_freq_len()); // move cursor up n lines
+	//printf("\033[%uA", get_freq_len()); // move cursor up n lines
 
 
 	counter++;
@@ -193,6 +193,20 @@ void populate_audio_buf(uint16_t * buf, int size, int freq, int sampling_frequen
 
 }
 
+int stop_execution = 0;
+
+static void sigHandler(int sig) {
+
+	printf("signal %d\n", sig);
+
+	stop_execution = 1;
+
+//
+//	exit(EXIT_SUCCESS);
+
+}
+
+
 int main(int argc, char*argv[]) {
 	/**
 	 * very simple example which iterates these steps:
@@ -202,6 +216,9 @@ int main(int argc, char*argv[]) {
 	 *
 	 */
 
+	if (signal(SIGINT, sigHandler) == SIG_ERR) {
+		perror("signal");
+	}
 
     /* The sample type to use */
     static const pa_sample_spec ss = {
@@ -241,7 +258,7 @@ int main(int argc, char*argv[]) {
 
     printf("buf size: %ld bytes\n",sizeof(buf));
 
-    for (;;) {
+    while (!stop_execution) {
 
     	if (DEBUG) {
     		populate_audio_buf(buf, sizeof(buf) / sizeof(uint16_t), 440, SAMPLING_FREQ);
@@ -256,10 +273,23 @@ int main(int argc, char*argv[]) {
 
     	memcpy(cx_in, &cx_in[AUDIO_BUF_SIZE], (BUFSIZE - AUDIO_BUF_SIZE) * sizeof(kiss_fft_cpx));
 
+    	// running average
+    	// m(n) = m(n-1) + (a(n) - m(n-1)) / n
+    	float incremental_average = 0;
+
     	for (int i = 0; i < AUDIO_BUF_SIZE; i++) {
-    		cx_in[i + BUFSIZE - AUDIO_BUF_SIZE].r = buf[i] ;
+
+    		int val = (int16_t)buf[i];
+//
+
+
+    		cx_in[i + BUFSIZE - AUDIO_BUF_SIZE].r = val;
     		//cx_in[i].i = 0.f;
+
+    		incremental_average = incremental_average + (cx_in[i + BUFSIZE - AUDIO_BUF_SIZE].r - incremental_average) / (i+1);
     	}
+
+    	printf("incremental_average = %f\n", incremental_average);
 
     	/* calculate fft */
     	kiss_fft( cfg , cx_in , cx_out );
@@ -274,6 +304,8 @@ int main(int argc, char*argv[]) {
 
     ret = 0;
 finish:
+
+	printf("terminating...\n");
 
 	free(cx_out);
 	free(cx_in);
