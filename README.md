@@ -9,3 +9,7 @@ then calculates FFT of recorded samples,
 
 then looks up the frequency at which the spectrum has the absolute maximum (uses only the real component of spectrum).
 
+
+clone repository:
+
+git clone --recurse-submodules https://github.com/marcotessarotto/pafft
