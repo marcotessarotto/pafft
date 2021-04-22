@@ -76,6 +76,7 @@ static float find_max(kiss_fft_cpx * cx_out, int size, int sampling_freq) {
 
 	// ANSI/VT100 Terminal Control Escape Sequences
 	// http://www.termsys.demon.co.uk/vtansi.htm
+	// https://web.archive.org/web/20200413124215/http://www.termsys.demon.co.uk/vtansi.htm
 	printf("%5d#  \033[32m  MAX_FREQ=%5d \033[30m  VALUE=%.0f\r", counter++, max_freq, max);
 
 	return max_freq;
