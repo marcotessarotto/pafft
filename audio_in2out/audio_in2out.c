@@ -7,7 +7,7 @@
 #include <pulse/error.h>
 
 
-#define AUDIO_BUF_SIZE 256
+#define AUDIO_BUF_SIZE 1024
 
 #define BUFSIZE (AUDIO_BUF_SIZE*4)
 
@@ -78,12 +78,13 @@ int main(int argc, char*argv[]) {
 
     finish:
 
-	if (s_rec)
+	if (s_rec) {
 		pa_simple_free(s_rec);
+	}
 
-    if (s_play)
+    if (s_play) {
         pa_simple_free(s_play);
+    }
 
-
-	return ret;
+    return ret;
 }
